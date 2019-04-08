@@ -4,8 +4,6 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.KeyEvent;
 
@@ -30,7 +28,7 @@ public class MyRecognitionActivity extends ArgesRecognitionActivity implements O
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((keyCode == KeyEvent.KEYCODE_BACK) && (event.getAction() == KeyEvent.ACTION_DOWN)) {
             startActivity(new Intent(this, MainActivity.class));
             finish();
@@ -41,7 +39,7 @@ public class MyRecognitionActivity extends ArgesRecognitionActivity implements O
     }
 
     @Override
-    public boolean onRecognized(@Nullable RecognitionItem recognitionItem) {
+    public boolean onRecognized(RecognitionItem recognitionItem) {
         if (recognitionItem == null || recognitionItem.getConfidence() < 0.6) { // 缺省可信度阈值是0.5, 限制0.6或更高可以更校验严格
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage("我不认识你").setTitle("提示").setPositiveButton("Close", new DialogInterface.OnClickListener() {

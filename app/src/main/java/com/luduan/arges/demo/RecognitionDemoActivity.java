@@ -1,20 +1,12 @@
 package com.luduan.arges.demo;
 
-import android.Manifest;
-import android.annotation.TargetApi;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
-import android.os.Build;
-import android.os.Environment;
-import android.support.annotation.NonNull;
-import android.support.annotation.UiThread;
-import android.support.annotation.WorkerThread;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.Environment;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -38,12 +30,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class RecognitionDemoActivity extends AppCompatActivity implements CameraListener {
+public class RecognitionDemoActivity extends ActionBarActivity implements CameraListener {
     private static final String TAG = RecognitionDemoActivity.class.getSimpleName();
 
     private ArgesFaceCameraView cameraView;
@@ -81,12 +70,12 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
         argesClient = app.getArgesClient();
         recognitionGroup = app.GroupID;
 
-        cameraView = findViewById(R.id.recogCameraView);
+        cameraView = (ArgesFaceCameraView) findViewById(R.id.recogCameraView);
         cameraView.setHighDefinition(false);
         cameraView.setCameraListener(this);
-        //cameraView.setRequireOriginalPicture(true); // Only required for snapshot function.
+        //cameraView.setRequireOriginalPicture(true); //!!!This is not required by snapshot function.
 
-        startButton = findViewById(R.id.recogStartButtion);
+        startButton = (Button) findViewById(R.id.recogStartButtion);
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -94,18 +83,15 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
                     scanning.compareAndSet(true, false);
                     startButton.setText("开始");
                     cameraView.stopCapture();
-                    snapshotButton.setEnabled(false);
                 } else {
                     scanning.compareAndSet(false, true);
                     startButton.setText("停止");
                     cameraView.startCapture();
-                    snapshotButton.setEnabled(true);
                 }
             }
         });
 
-        snapshotButton = findViewById(R.id.snapshotButtion);
-        snapshotButton.setEnabled(false);
+        snapshotButton = (Button) findViewById(R.id.snapshotButtion);
         snapshotButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -113,22 +99,22 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
             }
         });
 
-        recogPhoto = findViewById(R.id.recogPhoto);
+        recogPhoto = (ImageView) findViewById(R.id.recogPhoto);
         recogPhoto.setImageResource(android.R.color.transparent);
 
-        recogName = findViewById(R.id.recogName);
+        recogName = (TextView) findViewById(R.id.recogName);
 
-        linvessIndicator = findViewById(R.id.livenessBar);
+        linvessIndicator = (ProgressBar) findViewById(R.id.livenessBar);
         linvessIndicator.setIndeterminate(false);
         linvessIndicator.setMax(100);
 
-        livenessValue = findViewById(R.id.livenessValue);
+        livenessValue = (TextView) findViewById(R.id.livenessValue);
 
-        confidenceIndicator = findViewById(R.id.confidenceBar);
+        confidenceIndicator = (ProgressBar) findViewById(R.id.confidenceBar);
         confidenceIndicator.setIndeterminate(false);
         confidenceIndicator.setMax(100);
 
-        confidenceValue = findViewById(R.id.confidenceValue);
+        confidenceValue = (TextView) findViewById(R.id.confidenceValue);
 
         setResult(null);
     }
@@ -136,26 +122,10 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
     @Override
     protected void onResume() {
         super.onResume();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            checkStoragePermission();
-        }
         cameraView.openCamera(LensFacing.Front);
     }
 
     private static final int WRITE_REQUEST_CODE = 0x111;
-
-    @TargetApi(Build.VERSION_CODES.M)
-    public void checkStoragePermission() {
-        int permissionCheckRead = checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        if (permissionCheckRead != PackageManager.PERMISSION_GRANTED) {
-            String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
-            requestPermissions(permissions, WRITE_REQUEST_CODE);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-    }
 
     @Override
     protected void onPause() {
@@ -174,8 +144,7 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
     }
 
     @Override
-    @WorkerThread
-    public Object onCapture(@NonNull Face[] faces, @NonNull byte[] bytes) {
+    public Object onCapture(Face[] faces, byte[] bytes) {
         if (faces.length == 0) {
             return new ObjectWrapper(null, bytes);
         }
@@ -191,7 +160,6 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
     }
 
     @Override
-    @UiThread
     public void onPostCapture(Object o) {
         ObjectWrapper obj = (ObjectWrapper) o;
 
@@ -213,7 +181,6 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
     }
 
     @Override
-    @UiThread
     public void onFailedCapture(Reason reason) {
         if (reason == CameraListener.Reason.NO_FACE_FOUND) {
             setResult(null);
@@ -221,12 +188,11 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
     }
 
     @Override
-    @UiThread
     public void onCameraOpened() {
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((keyCode == KeyEvent.KEYCODE_BACK) && (event.getAction() == KeyEvent.ACTION_DOWN)) {
             startActivity(new Intent(this, MainActivity.class));
             finish();
@@ -237,8 +203,8 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
     }
 
     public void takePhoto() {
-        if (scanning.get()) {
-            snapshot.compareAndSet(false, true);
+        if (snapshot.compareAndSet(false, true)) {
+            cameraView.snapshot();
         }
     }
 
