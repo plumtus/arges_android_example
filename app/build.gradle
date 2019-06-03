@@ -36,7 +36,7 @@ repositories {
 }
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.luduan.arges.client:arges-client-android:1.5.9@aar'
+    implementation 'com.luduan.arges.client:arges-client-android:1.5.10@aar'
     implementation('com.thoughtworks.xstream:xstream:1.4.7') {
         exclude group: 'xmlpull'
     }

@@ -6,15 +6,14 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.UiThread;
 import android.support.annotation.WorkerThread;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -38,9 +37,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RecognitionDemoActivity extends AppCompatActivity implements CameraListener {
@@ -84,7 +80,6 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
         cameraView = findViewById(R.id.recogCameraView);
         cameraView.setHighDefinition(false);
         cameraView.setCameraListener(this);
-        //cameraView.setRequireOriginalPicture(true); // Only required for snapshot function.
 
         startButton = findViewById(R.id.recogStartButtion);
         startButton.setOnClickListener(new View.OnClickListener() {
@@ -105,7 +100,6 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
         });
 
         snapshotButton = findViewById(R.id.snapshotButtion);
-        snapshotButton.setEnabled(false);
         snapshotButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -237,8 +231,8 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
     }
 
     public void takePhoto() {
-        if (scanning.get()) {
-            snapshot.compareAndSet(false, true);
+        if (snapshot.compareAndSet(false, true)) {
+            cameraView.snapshot();
         }
     }
 
