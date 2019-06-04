@@ -29,6 +29,7 @@ import com.luduan.android.widget.Face;
 import com.luduan.android.widget.LensFacing;
 import com.luduan.arges.client.ArgesClient;
 import com.luduan.arges.client.ClientException;
+import com.luduan.arges.client.Group;
 import com.luduan.arges.client.RecognitionItem;
 import com.luduan.arges.client.ServerException;
 
@@ -37,6 +38,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RecognitionDemoActivity extends AppCompatActivity implements CameraListener {
@@ -178,6 +180,22 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
             recognitionItem = argesClient.recognize(recognitionGroup, faces[0].getImage(), true, true);
         } catch (ServerException e) {
             Log.w(TAG, "Can't recognize: " + e.getMessage());
+            // Just for test
+            if (e.getMessage().contains("Invalid group ID")) {
+                try {
+                    List<Group> groups = argesClient.getGroups();
+                    for (Group g : groups) {
+                        Log.d(TAG, "Group[" + g.getId() + "] " + g.getName());
+                    }
+                    if (!groups.isEmpty()) {
+                        recognitionGroup = groups.get(0).getId();
+                    }
+                } catch (ClientException e1) {
+                    e1.printStackTrace();
+                } catch (ServerException e1) {
+                    e1.printStackTrace();
+                }
+            }
         } catch (ClientException e) {
             Log.e(TAG, "Failed to recognize", e);
         }

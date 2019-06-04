@@ -18,3 +18,6 @@ gradle-app.setting
 
 # Cache of project
 .gradletasknamecache
+
+# Ignore local configuration
+app/src/main/assets/arges-client-config.properties
