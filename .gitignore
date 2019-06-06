@@ -9,6 +9,7 @@
 /build
 /captures
 .externalNativeBuild
+*.swp
 
 # Ignore Gradle GUI config
 gradle-app.setting
