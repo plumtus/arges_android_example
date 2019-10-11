@@ -1,7 +1,6 @@
 package com.luduan.arges.demo;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -10,10 +9,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.annotation.NonNull;
-import android.support.annotation.UiThread;
-import android.support.annotation.WorkerThread;
-import android.support.v7.app.AppCompatActivity;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -23,26 +19,33 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.luduan.android.widget.ArgesFaceCameraView;
-import com.luduan.android.widget.CameraListener;
-import com.luduan.android.widget.Face;
-import com.luduan.android.widget.LensFacing;
+import androidx.annotation.NonNull;
+import androidx.annotation.UiThread;
+import androidx.annotation.WorkerThread;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.luduan.arges.client.ArgesClient;
 import com.luduan.arges.client.ClientException;
 import com.luduan.arges.client.Group;
 import com.luduan.arges.client.RecognitionItem;
 import com.luduan.arges.client.ServerException;
+import com.luduan.arges.widget.ArgesFaceCameraView;
+import com.luduan.arges.widget.CameraListener;
+import com.luduan.arges.widget.Face;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RecognitionDemoActivity extends AppCompatActivity implements CameraListener {
     private static final String TAG = RecognitionDemoActivity.class.getSimpleName();
+
+    private static boolean EconoMode = true;
 
     private ArgesFaceCameraView cameraView;
 
@@ -66,8 +69,6 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
 
     private AtomicBoolean snapshot = new AtomicBoolean(false);
 
-    private ArgesClient argesClient;
-
     private String recognitionGroup;
 
     @Override
@@ -75,11 +76,10 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recognition_demo);
 
-        DemoApp app = (DemoApp) getApplication();
-        argesClient = app.getArgesClient();
-        recognitionGroup = app.GroupID;
+        recognitionGroup = DemoApp.GroupID;
 
         cameraView = findViewById(R.id.recogCameraView);
+        cameraView.register(DemoApp.ServerEndpoint, DemoApp.AppID, DemoApp.AppKey);  // 设置服务器访问参数
         cameraView.setHighDefinition(false);
         cameraView.setCameraListener(this);
 
@@ -133,24 +133,36 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
     protected void onResume() {
         super.onResume();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            checkStoragePermission();
-        }
-        cameraView.openCamera(LensFacing.Front);
-    }
-
-    private static final int WRITE_REQUEST_CODE = 0x111;
-
-    @TargetApi(Build.VERSION_CODES.M)
-    public void checkStoragePermission() {
-        int permissionCheckRead = checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        if (permissionCheckRead != PackageManager.PERMISSION_GRANTED) {
-            String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
-            requestPermissions(permissions, WRITE_REQUEST_CODE);
+            List<String> perms = new ArrayList<String>();
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                perms.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            }
+            if (checkSelfPermission(Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED) {
+                perms.add(Manifest.permission.INTERNET);
+            }
+            if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                perms.add(Manifest.permission.CAMERA);
+            }
+            if (perms.isEmpty()) { // 已经拥有全部权限,则直接打开摄像头
+                cameraView.openAntiSpoofingCamera(EconoMode);
+            } else {
+                requestPermissions(perms.toArray(new String[0]), 0);
+            }
+        } else {
+            cameraView.openAntiSpoofingCamera(EconoMode);
         }
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == 0) {
+            for (int i = 0; i < permissions.length; i++) {
+                if (permissions[i].equals(Manifest.permission.CAMERA) && grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                    cameraView.openAntiSpoofingCamera(EconoMode);
+                    break;
+                }
+            }
+        }
     }
 
     @Override
@@ -177,13 +189,16 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
         }
         RecognitionItem recognitionItem = null;
         try {
-            recognitionItem = argesClient.recognize(recognitionGroup, faces[0].getImage(), true, true);
+            long bts = SystemClock.currentThreadTimeMillis();
+            recognitionItem = cameraView.getArgesClient().recognize(recognitionGroup, faces[0].getImage(), true, true);
+            long ets = SystemClock.currentThreadTimeMillis();
+            Log.i(TAG, String.format("Recognition completed, elapsed %d milliseconds", ets - bts));
         } catch (ServerException e) {
             Log.w(TAG, "Can't recognize: " + e.getMessage());
             // Just for test
             if (e.getMessage().contains("Invalid group ID")) {
                 try {
-                    List<Group> groups = argesClient.getGroups();
+                    List<Group> groups = cameraView.getArgesClient().getGroups();
                     for (Group g : groups) {
                         Log.d(TAG, "Group[" + g.getId() + "] " + g.getName());
                     }
@@ -229,12 +244,18 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
     public void onFailedCapture(Reason reason) {
         if (reason == CameraListener.Reason.NO_FACE_FOUND) {
             setResult(null);
+        } else if (reason == CameraListener.Reason.SPOOFING) {
+            recogPhoto.setImageResource(R.drawable.anonymous);
         }
     }
 
     @Override
     @UiThread
     public void onCameraOpened() {
+    }
+
+    @Override
+    public void onFillLightRequest(boolean b) {
     }
 
     @Override
@@ -308,16 +329,16 @@ public class RecognitionDemoActivity extends AppCompatActivity implements Camera
             confidenceIndicator.setProgress(0);
             confidenceValue.setText("");
         } else {
-            (new ImageLoader(argesClient, recogPhoto)).execute(item.getPerson().getPhoto());
+            (new ImageLoader(cameraView.getArgesClient(), recogPhoto)).execute(item.getPerson().getPhoto());
             recogName.setText(item.getPerson().getName());
 
             int lv = (int) (item.getLiveness() * 100);
             linvessIndicator.setProgress(lv);
-            livenessValue.setText(Integer.toString(lv) + "%");
+            livenessValue.setText(lv + "%");
 
             int cf = (int) (item.getConfidence() * 100);
             confidenceIndicator.setProgress(cf);
-            confidenceValue.setText(Integer.toString(cf) + "%");
+            confidenceValue.setText(cf + "%");
         }
     }
 

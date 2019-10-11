@@ -2,9 +2,9 @@ package com.luduan.arges.demo;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.view.KeyEvent;
+
+import androidx.annotation.Nullable;
 
 import com.luduan.arges.client.RecognitionItem;
 import com.luduan.arges.snack.OnRecognizedListener;
@@ -12,13 +12,12 @@ import com.luduan.arges.snack.OnRecognizedListener;
 public class MyRegisterActivity extends com.luduan.arges.snack.ArgesRegisterActivity implements OnRecognizedListener {
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        DemoApp app = (DemoApp) getApplication();
-        setRecognitionServer(app.getArgesClient()); // 设置已经创建的ArgesClient实例
+        setRecognitionServer(DemoApp.ServerEndpoint, DemoApp.AppID, DemoApp.AppKey); // 设置服务器访问参数
 
-        setRecognitionGroup(app.GroupID); // 人脸入库所归属的分组
+        setRecognitionGroup(DemoApp.GroupID); // 人脸入库所归属的分组
 
         setAcquisitionNumber(5); // 设置一次采集流程中采集的人脸照片数量
 
@@ -38,7 +37,7 @@ public class MyRegisterActivity extends com.luduan.arges.snack.ArgesRegisterActi
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((keyCode == KeyEvent.KEYCODE_BACK) && (event.getAction() == KeyEvent.ACTION_DOWN)) {
             startActivity(new Intent(this, MainActivity.class));
             finish();

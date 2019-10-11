@@ -4,10 +4,10 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.KeyEvent;
+
+import androidx.annotation.Nullable;
 
 import com.luduan.arges.client.RecognitionItem;
 import com.luduan.arges.snack.ArgesRecognitionActivity;
@@ -16,13 +16,12 @@ import com.luduan.arges.snack.OnRecognizedListener;
 public class MyRecognitionActivity extends ArgesRecognitionActivity implements OnRecognizedListener {
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        DemoApp app = (DemoApp) getApplication();
-        setRecognitionServer(app.getArgesClient()); // 设置已经创建的ArgesClient实例
+        setRecognitionServer(DemoApp.ServerEndpoint, DemoApp.AppID, DemoApp.AppKey); // 设置服务器访问参数
 
-        addRecognitionGroup(app.GroupID); //设置识别的目标分组
+        addRecognitionGroup(DemoApp.GroupID); //设置识别的目标分组
 
         setLivenessCheck(true); // 启用活体识别功能
 
@@ -30,7 +29,7 @@ public class MyRecognitionActivity extends ArgesRecognitionActivity implements O
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((keyCode == KeyEvent.KEYCODE_BACK) && (event.getAction() == KeyEvent.ACTION_DOWN)) {
             startActivity(new Intent(this, MainActivity.class));
             finish();

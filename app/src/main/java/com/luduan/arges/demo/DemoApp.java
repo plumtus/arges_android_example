@@ -3,10 +3,6 @@ package com.luduan.arges.demo;
 import android.app.Application;
 import android.util.Log;
 
-import com.luduan.arges.client.ArgesAndroidClient;
-import com.luduan.arges.client.ArgesClient;
-import com.luduan.arges.client.ClientException;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Properties;
@@ -18,12 +14,9 @@ public class DemoApp extends Application {
     public static String AppKey = "12345678abcdef00"; // 请修改为实际值，见Web管理端‘应用设置’页面
     public static String GroupID = "12345678abcd"; // 请修改为实际值，见Web管理端‘数据管理’页面
 
-    private ArgesClient argesClient = null;
-
     @Override
     public void onCreate() {
         super.onCreate();
-
         try {
             if (Arrays.asList(getResources().getAssets().list("")).contains("arges-client-config.properties")) {
                 Properties properties = new Properties();
@@ -36,18 +29,5 @@ public class DemoApp extends Application {
         } catch (IOException e) {
             Log.d("TEST", "Can not load ARGES configuration file", e);
         }
-
-        try {
-            argesClient = new ArgesAndroidClient(ServerEndpoint, AppID, AppKey);
-        } catch (ClientException e) {
-            throw new RuntimeException("ArgesClient creation error: " + e.getMessage());
-        }
-    }
-
-    public ArgesClient getArgesClient() {
-        if (argesClient == null) {
-            throw new RuntimeException("ArgesClient has not been initialized");
-        }
-        return argesClient;
     }
 }
